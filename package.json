@@ -1,0 +1,23 @@
+{
+  "name": "prediction-service",
+  "version": "1.0.0",
+  "description": "Service that periodically publishes traffic light state updates",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/siarhei-bazhko/prediction-service.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/siarhei-bazhko/prediction-service/issues"
+  },
+  "homepage": "https://github.com/siarhei-bazhko/prediction-service#readme",
+  "dependencies": {
+    "dotenv": "^10.0.0",
+    "mqtt": "^4.2.8"
+  }
+}
