@@ -4,6 +4,7 @@ require('dotenv').config();
 
 const MQTT_ADDRESS = process.env.MQTT_ADDRESS
 const PUBLISH_INTERVAL = process.env.PUBLISH_INTERVAL
+const RECONNECT_INTERVAL = process.env.RECONNECT_INTERVAL
 const publishOptions = {
 	qos: +process.env.QOS,
 	retain: false,
@@ -28,13 +29,24 @@ const getTrafficLightNames = () => {
 }
 
 const tlns = getTrafficLightNames()
-const client = mqtt.connect(MQTT_ADDRESS)
+let reconnectAttempt = 0
 
-client.on('connect', async e => {
-	const connMsg = "[Prediction service] connected: " + JSON.stringify(e);
-	console.log(connMsg)
-  setInterval(publishPredictions, PUBLISH_INTERVAL)
-})
+const connectMQTT = () => {
+	try {
+		const client = mqtt.connect(MQTT_ADDRESS)
+		client.on('connect', async e => {
+			const connMsg = "[Prediction service] connected: " + JSON.stringify(e);
+			console.log(connMsg)
+			setInterval(publishPredictions, PUBLISH_INTERVAL)
+		})
+	} catch (e) {
+		console.log(`[${++reconnectAttempt}] Trying to reconnect...`);
+		setTimeout(connectMQTT, RECONNECT_INTERVAL)
+	}
+}
+
+connectMQTT()
+
 
 const publishPredictions = () => {
   tlns.forEach((tln, i)=> {
