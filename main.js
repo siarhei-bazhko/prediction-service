@@ -1,4 +1,3 @@
-const { EventEmitter } = require('events');
 const fs = require('fs')
 const mqtt = require('mqtt')
 require('dotenv').config();
@@ -6,7 +5,9 @@ require('dotenv').config();
 const MQTT_ADDRESS = process.env.MQTT_ADDRESS
 const PUBLISH_INTERVAL = process.env.PUBLISH_INTERVAL
 const publishOptions = {
-	qos: process.env.QOS
+	qos: +process.env.QOS,
+	retain: false,
+	dup: false
 }
 
 console.log(MQTT_ADDRESS, PUBLISH_INTERVAL, publishOptions.qos);
@@ -29,8 +30,9 @@ const getTrafficLightNames = () => {
 const tlns = getTrafficLightNames()
 const client = mqtt.connect(MQTT_ADDRESS)
 
-client.on('connect', (e) => {
-  console.log("[Prediction service] connected: " + JSON.stringify(e))
+client.on('connect', async e => {
+	const connMsg = "[Prediction service] connected: " + JSON.stringify(e);
+	console.log(connMsg)
   setInterval(publishPredictions, PUBLISH_INTERVAL)
 })
 
@@ -38,12 +40,7 @@ const publishPredictions = () => {
   tlns.forEach((tln, i)=> {
 		const topicName = `${i + 1}/${tln}`
 		const prediction = generateNextPrediction(topicName);
-		console.log(topicName, prediction);
-		client.publish(topicName, JSON.stringify(prediction), publishOptions, (err) => {
-			// if (err !== null || err != undefined) {
-			// 	console.log(err)
-			// }
-		})
+		client.publish(topicName, JSON.stringify(prediction), publishOptions)
 	})
 }
 
@@ -58,11 +55,11 @@ const generateNextPrediction = (topicName) => {
 	const [h, mi, s] = [date.getHours(), date.getMinutes(), date.getSeconds()];
 	const randomThreshold = Math.floor(Math.random()*(MAX_THRESHOLD-MIN_THRESHOLD+1)+MIN_THRESHOLD);
 	return {
-    "signalGroupId": topicName,
-    "greentimeThreshold": randomThreshold,
-		"startTime": `${y}-${mo < 10 ? '0'+mo : mo}-${d < 10 ? '0'+ d : d} ${h}:${mi < 10 ? '0'+mi : mi}:${s < 10 ? '0'+s : s}`,
-    "timestamp": +date,
-    "value": [0,0,0,0,0,0,0,0,0,0,0,0,1,2,3,4,15,50,60,70,88,99,100,100,100,100,100,100,100,98,87,76,65,54,32,21,12,6,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    signalGroupId: topicName,
+    greentimeThreshold: randomThreshold,
+		startTime: `${y}-${mo < 10 ? '0'+mo : mo}-${d < 10 ? '0'+ d : d} ${h}:${mi < 10 ? '0'+mi : mi}:${s < 10 ? '0'+s : s}`,
+    timestamp: +date,
+    value: [0,0,0,0,0,0,0,0,0,0,0,0,1,2,3,4,15,50,60,70,88,99,100,100,100,100,100,100,100,98,87,76,65,54,32,21,12,6,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 	}
 }
 
