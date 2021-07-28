@@ -1,12 +1,15 @@
 const fs = require('fs')
 const mqtt = require('mqtt')
-require('dotenv').config();
+console.log(process.env.NODE_ENV);
+if (process.env.NODE_ENV == 'local') {
+	require('dotenv').config();
+}
 
-const MQTT_ADDRESS = process.env.MQTT_ADDRESS
-const PUBLISH_INTERVAL = process.env.PUBLISH_INTERVAL
-const RECONNECT_INTERVAL = process.env.RECONNECT_INTERVAL
+const MQTT_ADDRESS = process.env.MQTT_ADDRESS || 'mqtt://localhost:1883'
+const PUBLISH_INTERVAL = +process.env.PUBLISH_INTERVAL || 5000
+const QOS = process.env.QOS || 0;
 const publishOptions = {
-	qos: +process.env.QOS,
+	qos: +QOS,
 	retain: false,
 	dup: false
 }
@@ -59,6 +62,6 @@ client.setMaxListeners(0)
 client.on('connect', async e => {
 	const connMsg = "[Prediction service] connected: " + JSON.stringify(e);
 	console.log(connMsg)
-	setInterval(publishPredictions, RECONNECT_INTERVAL)
+	setInterval(publishPredictions, PUBLISH_INTERVAL)
 })
 
