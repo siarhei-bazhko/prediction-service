@@ -14,6 +14,8 @@ client.on('message', (topic, message) => {
     case process.env.TOPIC:
      console.log(process.env.TOPIC);
       return console.log(JSON.parse(message.toString()));
+    default:
+      console.log(JSON.parse(message.toString()));
   }
   console.log('No handler for topic %s', topic)
 })

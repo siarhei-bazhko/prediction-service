@@ -11,7 +11,7 @@ const publishOptions = {
 	dup: false
 }
 
-console.log(MQTT_ADDRESS, PUBLISH_INTERVAL, publishOptions.qos);
+console.info(MQTT_ADDRESS, PUBLISH_INTERVAL, publishOptions.qos);
 
 const getTrafficLightNames = () => {
 	try {
@@ -19,9 +19,9 @@ const getTrafficLightNames = () => {
 		const lsa = JSON.parse(raw)
 		let trafficLightNames = []
 		lsa.forEach(traffiLightData => {
-			trafficLightNames = [...trafficLightNames, ...traffiLightData.sgList.map(sg => sg.name)]
+			trafficLightNames = [...trafficLightNames, ...traffiLightData.sgList.map(sg => `${traffiLightData.id}/${sg.name}`)]
 		})
-		console.log(trafficLightNames)
+		console.info(trafficLightNames)
 		return trafficLightNames
 	} catch (err) {
 		console.error(err)
@@ -29,35 +29,6 @@ const getTrafficLightNames = () => {
 }
 
 const tlns = getTrafficLightNames()
-let reconnectAttempt = 0
-
-const connectMQTT = () => {
-	try {
-		const client = mqtt.connect(MQTT_ADDRESS)
-		client.on('connect', async e => {
-			const connMsg = "[Prediction service] connected: " + JSON.stringify(e);
-			console.log(connMsg)
-			setInterval(publishPredictions, PUBLISH_INTERVAL)
-		})
-	} catch (e) {
-		console.log(`[${++reconnectAttempt}] Trying to reconnect...`);
-		setTimeout(connectMQTT, RECONNECT_INTERVAL)
-	}
-}
-
-connectMQTT()
-
-
-const publishPredictions = () => {
-  tlns.forEach((tln, i)=> {
-		const topicName = `${i + 1}/${tln}`
-		const prediction = generateNextPrediction(topicName);
-		client.publish(topicName, JSON.stringify(prediction), publishOptions)
-	})
-}
-
-
-
 const MAX_THRESHOLD = 85
 const MIN_THRESHOLD = 60
 
@@ -75,5 +46,19 @@ const generateNextPrediction = (topicName) => {
 	}
 }
 
+const publishPredictions = () => {
+  tlns.forEach((tln)=> {
+		const topicName = tln;
+		const prediction = generateNextPrediction(topicName);
+		client.publish(topicName, JSON.stringify(prediction), publishOptions)
+	})
+}
 
+const client = mqtt.connect(MQTT_ADDRESS)
+client.setMaxListeners(0)
+client.on('connect', async e => {
+	const connMsg = "[Prediction service] connected: " + JSON.stringify(e);
+	console.log(connMsg)
+	setInterval(publishPredictions, RECONNECT_INTERVAL)
+})
 
